@@ -1,44 +1,59 @@
 import pandas as pd
 
-# Path file Excel
-file_path = 'C:/Users/MRX/Downloads/Data_Puskesmas.xlsx'
+# Path ke file Excel
+file_path = 'C:/Users/MRX/Downloads/Data_Puskesmas_Merged.xlsx'
+output_path = 'C:/Users/MRX/Downloads/Data_Analisis.xlsx'
 
-# Membaca semua sheet dalam file Excel
+# Membaca semua sheet dalam file
 all_sheets = pd.read_excel(file_path, sheet_name=None)
 
-# List untuk menyimpan DataFrame dari setiap sheet
-df_list = []
+# Dictionary untuk menyimpan hasil
+summary_data = {}  # Menyimpan data tertinggi & terendah
+remaining_data = {}  # Menyimpan data sisanya
 
-# Iterasi melalui setiap sheet
+# Loop melalui setiap sheet dalam Excel
 for sheet_name, df in all_sheets.items():
-    # Standarisasi nama kolom agar seragam
-    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+    # Mengambil hanya kolom numerik
+    numeric_df = df.select_dtypes(include=['number'])
 
-    # Normalisasi kolom HR karena ada yang "HR (Bpm)" dan "HR (bpm)"
-    hr_columns = [col for col in df.columns if 'hr' in col]
-    if len(hr_columns) == 1:
-        df.rename(columns={hr_columns[0]: 'hr'}, inplace=True)
+    # List untuk menyimpan data hasil tertinggi & terendah
+    result_list = []
 
-    # Menormalkan kolom-kolom yang seharusnya ada di semua sheet
-    expected_columns = ['ir', 'usia', 'hr', 'glu', 'chol', 'acd']
-    for col in expected_columns:
-        if col not in df.columns:
-            df[col] = None  # Menambahkan kolom yang hilang dengan nilai None
+    # Menemukan nilai tertinggi dan terendah di setiap kolom
+    for col in numeric_df.columns:
+        max_value = numeric_df[col].max()
+        min_value = numeric_df[col].min()
 
-    # Pilih hanya kolom yang diinginkan
-    df = df[expected_columns]
+        # Baris dengan nilai tertinggi
+        max_row = df[df[col] == max_value].copy()
+        max_row["Keterangan"] = f"Data Tertinggi - {col}"
 
-    # Tambahkan ke daftar DataFrame
-    df_list.append(df)
+        # Baris dengan nilai terendah
+        min_row = df[df[col] == min_value].copy()
+        min_row["Keterangan"] = f"Data Terendah - {col}"
 
-# Menggabungkan semua DataFrame menjadi satu
-merged_df = pd.concat(df_list, ignore_index=True)
+        # Menyimpan hasil ke list
+        result_list.append(max_row)
+        result_list.append(min_row)
 
-# Simpan hasil ke file Excel
-output_file = 'C:/Users/MRX/Downloads/Data_Puskesmas_Merged.xlsx'
-merged_df.to_excel(output_file, index=False)
+    # Menggabungkan semua hasil ke satu dataframe
+    if result_list:
+        summary_data[sheet_name + " - Tertinggi & Terendah"] = pd.concat(result_list, ignore_index=True)
 
-print(f"File hasil penggabungan telah disimpan di: {output_file}")
+    # Menyimpan data sisanya (yang bukan tertinggi atau terendah)
+    rows_to_exclude = pd.concat(result_list, ignore_index=True) if result_list else pd.DataFrame()
+    remaining_df = df.loc[~df.index.isin(rows_to_exclude.index)].copy()
 
-# Opsional: Menampilkan beberapa baris pertama di terminal
-print(merged_df.head())
+    # Jika masih ada sisa data, simpan ke sheet berbeda
+    if not remaining_df.empty:
+        remaining_data[sheet_name + " - Data Lainnya"] = remaining_df
+
+# Menyimpan ke file Excel baru dalam sheet yang terpisah
+with pd.ExcelWriter(output_path) as writer:
+    for sheet, data in summary_data.items():
+        data.to_excel(writer, sheet_name=sheet, index=False)
+
+    for sheet, data in remaining_data.items():
+        data.to_excel(writer, sheet_name=sheet, index=False)
+
+print(f"Hasil telah disimpan ke {output_path}")
