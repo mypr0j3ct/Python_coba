@@ -11,9 +11,6 @@ df_list = []
 
 # Iterasi melalui setiap sheet
 for sheet_name, df in all_sheets.items():
-    # Tambahkan kolom 'Tanggal Pemeriksaan' berdasarkan nama sheet
-    df['Tanggal Pemeriksaan'] = sheet_name
-
     # Standarisasi nama kolom agar seragam
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
 
@@ -23,14 +20,14 @@ for sheet_name, df in all_sheets.items():
         df.rename(columns={hr_columns[0]: 'hr'}, inplace=True)
 
     # Menormalkan kolom-kolom yang seharusnya ada di semua sheet
-    expected_columns = {'nama', 'usia', 'jenis_kelamin', 'hr', 'ir', 'glu', 'chol', 'acd'}
+    expected_columns = ['ir', 'usia', 'hr', 'glu', 'chol', 'acd']
     for col in expected_columns:
         if col not in df.columns:
-            df[col] = None  # Menambahkan kolom yang hilang
+            df[col] = None  # Menambahkan kolom yang hilang dengan nilai None
 
-    # Menyusun ulang kolom agar seragam
-    df = df[list(expected_columns) + ['tanggal_pemeriksaan']]
-    
+    # Pilih hanya kolom yang diinginkan
+    df = df[expected_columns]
+
     # Tambahkan ke daftar DataFrame
     df_list.append(df)
 
