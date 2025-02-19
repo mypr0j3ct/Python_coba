@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend (suitable for saving images)
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
+import os
 
 # Sigmoid function
 def sigmoid(z):
@@ -122,6 +125,10 @@ patience_count = 0
 train_losses = []
 test_losses = []
 
+# Define directory path for saving files
+save_dir = r'C:\Users\MRX\Videos\Captures'
+os.makedirs(save_dir, exist_ok=True)
+
 # Training loop
 for epoch in range(epochs):
     train_loss = 0
@@ -190,8 +197,9 @@ plt.ylabel('Loss')
 plt.title('Training and Valid Loss per Epoch')
 plt.legend()
 plt.grid(True)
-plt.savefig('GULA_DARAH_loss.jpg', format='jpg')
-plt.show()
+
+# Save the plot to the specified directory
+plt.savefig(os.path.join(save_dir, 'GULA_DARAH_loss.jpg'), format='jpg')
 
 # Create a DataFrame to save to Excel
 epoch_data = {
@@ -202,8 +210,8 @@ epoch_data = {
 
 df = pd.DataFrame(epoch_data)
 
-# Save to Excel
-df.to_excel('GULA_DARAH.xlsx', index=False)
+# Save to Excel in the specified directory
+df.to_excel(os.path.join(save_dir, 'GULA_DARAH.xlsx'), index=False)
 
 # Final values
 print(f'Optimal Weight for x1: {weight_x1}')
