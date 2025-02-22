@@ -1,27 +1,22 @@
 import pandas as pd
-import random
 
-# Path file Excel
-file_path = 'C:/Users/MRX/Downloads/Book1.xlsx'
-output_file = 'C:/Users/MRX/Downloads/Split_Book1.xlsx'
+# Membaca file Excel
+input_path = r'C:\Users\MRX\Downloads\Data_Puskesmas_Merged.xlsx'
+sheet_name = 'MKN'
+df = pd.read_excel(input_path, sheet_name=sheet_name)
 
-# Membaca semua sheet dalam file Excel
-all_sheets = pd.read_excel(file_path, sheet_name=None)
+# Memfilter data
+filtered_df = df[(df['RHR'] >= 60) & (df['RHR'] <= 100)]  # Data valid (60-100)
+outlier_df = df[(df['RHR'] < 60) | (df['RHR'] > 100)]  # Data di bawah 60 atau di atas 100
 
-# Mengambil dataframe dari sheet pertama (misalnya 'Sheet1')
-sheet_name = list(all_sheets.keys())[0]  # Ambil nama sheet pertama
-df = all_sheets[sheet_name]  # Ambil dataframe dari sheet tersebut
+# Membuat file Excel baru dengan dua sheet
+output_path = r'C:\Users\MRX\Videos\Captures\Python_Final\coba_data.xlsx'
 
-# Mengacak indeks dataframe
-shuffled_df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+with pd.ExcelWriter(output_path, engine='xlsxwriter') as writer:
+    filtered_df.to_excel(writer, sheet_name='Filtered_Data', index=False, columns=['RHR', 'usia', 'ir', 'glu', 'chol', 'acd'])
+    outlier_df.to_excel(writer, sheet_name='Outlier_Data', index=False, columns=['RHR', 'usia', 'ir', 'glu', 'chol', 'acd'])
 
-# Memisahkan 7 dataframe pertama dan 25 dataframe lainnya
-df_selected = shuffled_df.iloc[:7]
-df_remaining = shuffled_df.iloc[7:]
-
-# Menulis ke file Excel baru dengan dua sheet
-with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
-    df_selected.to_excel(writer, sheet_name='Selected_7', index=False)
-    df_remaining.to_excel(writer, sheet_name='Remaining_25', index=False)
-
-print(f"File Excel baru berhasil disimpan di: {output_file}")
+# Menampilkan pesan konfirmasi
+print("File Excel baru telah dibuat di:", output_path)
+print("Sheet 'Filtered_Data' berisi data dengan RHR antara 60-100.")
+print("Sheet 'Outlier_Data' berisi data dengan RHR di bawah 60 atau di atas 100.")
